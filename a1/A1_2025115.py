@@ -2,10 +2,11 @@ from pulp import *
 import pandas as pd
 import numpy as np
 
+# I have edited the provided dataset to make it easier
+# to work with. The file 'fld.xlsx' is also provided in the zip.
 df = pd.read_excel('fld.xlsx')
 
 matrix = df.values
-# print(matrix)
 locs_by_name = list(df.columns)
 locations = []
 locations.extend(range(1, 38))
@@ -40,12 +41,10 @@ f = dict()
 d = dict()
 s = dict()
 for k in locations:
-    f[k] = fix_cost1
+    f[k] = fix_cost2
     d[k] = demand
     s[k] = capacity
 
-# fy = lpSum(y[i]*f[i] for i in locations)
-# cx = lpSum(costs[i][j] * x[(i, j)] for i in locations for j in locations)
 objective_function = lpSum(y[i]*f[i] for i in locations) + \
                      lpSum(costs[i][j] * x[(i, j)] for i in locations for j in locations)
 
@@ -71,4 +70,4 @@ for i in locations:
         print("DC in", locs_by_name[i-1])
 print("Nr. of DC's set up is {}".format(nr_of_dcs))
 
-
+print("Total cost: {}".format(pulp.value(model.objective)))
