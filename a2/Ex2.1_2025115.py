@@ -76,7 +76,7 @@ def is_visit_in_time_limit(remaining_travel_time, remaining_visiting_time, time_
     :return: If all conditions are ok true, otherwise, false.
     """
     if (remaining_travel_time - time_to_travel - visiting_time) >= 0 and (
-            remaining_visiting_time - time_to_travel - visiting_time) and (
+            remaining_visiting_time - time_to_travel - visiting_time) >= 0 and (
             remaining_travel_time - time_to_hq - time_to_travel - visiting_time) >= 0:
         return True
     else:
@@ -104,7 +104,7 @@ def can_next_location_be_visited(current_index, next_index, remaining_travel_tim
         remaining_travel_time -= visiting_time
         remaining_visiting_time -= visiting_time
         return True, remaining_travel_time, remaining_travel_time, distance_to_travel
-    elif remaining_travel_time < 10 and is_visit_in_time_limit(remaining_travel_time, remaining_travel_time,
+    elif remaining_travel_time < 10 and is_visit_in_time_limit(remaining_travel_time, remaining_visiting_time,
                                                                time_to_travel, visiting_time, time_to_hq):
         remaining_travel_time -= time_to_travel
         remaining_travel_time -= visiting_time
@@ -194,7 +194,7 @@ def nearest_neighbor(data, start=0):
             else:
                 continue
 
-        print(route)
+        # print(route)
         routes.append(route)
         route_counter += 1
         remaining_travel_time = 10
@@ -205,19 +205,8 @@ def nearest_neighbor(data, start=0):
 
     return output_df
 
-
 # ex1 nearest neighbour
 # EMTE likes to know how many days and how many kilometers John needs in total to visit all the stores.
 df = pd.read_excel("Data Excercise 2 - EMTE stores - BA 2019.xlsx")
-df['visited'] = False
-df['cannot_visit'] = False
-df['route_dist'] = 0
-df['total_dist'] = 0
-
-print(df.loc[0].Nr)
-print(df.loc[0].Name)
-
 route_df = nearest_neighbor(df)
-
 route_df.to_excel('Ex2.1-2025115.xls', index=False)
-# when route starts john can travel less than an hour and wait for 9h to start visit.
