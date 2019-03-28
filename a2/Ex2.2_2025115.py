@@ -3,8 +3,6 @@ from math import radians, cos, sin, asin, sqrt
 import numpy as np
 import random
 
-df = pd.read_excel('Ex2.1-2025115.xls')
-data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
 
 def haversine(lon1, lat1, lon2, lat2):
@@ -138,7 +136,7 @@ def get_old_routes_total_values(A, route_1, route_2, data):
     return total_km_old, total_time_old
 
 
-def check_swap(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data):
+def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data):
     route_1 = []
     route_nr_a = -1
     route_2 = []
@@ -171,6 +169,7 @@ def check_swap(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data)
     is_option_1_valid = False
     is_option_2_valid = False
 
+    # todo: probably i can prettify the whole block until return
     # option1
     total_km_opt1 = -1
     total_time_opt1 = -1
@@ -194,57 +193,108 @@ def check_swap(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data)
             total_time_opt2 = travel_time_ac + travel_time_bd
 
     if is_option_1_valid and is_option_2_valid:
-        print('both are nice. please compare also to old stuff')
+        # print('both are nice. please compare also to old stuff')
         total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
+        # old one is better than both
         if total_km_old <= total_km_opt1 and total_km_old <= total_km_opt2 and total_time_old <= total_km_opt1 and total_time_old <= total_time_opt2:
-            print('>>>>>change nothing.')
+            # print('>>>>>change nothing.')
+            return False, [], [], -1, -1, [], []
+        # both new options are better
+        elif total_km_old >= total_km_opt1 and total_km_old >= total_km_opt2 and total_time_old >= total_km_opt1 and total_time_old >= total_time_opt2:
+            # print('>>>>> opt1 or opt2 is better than old')
+            if total_km_opt1 <= total_km_opt2 and total_time_opt1 <= total_time_opt2:
+                # print('>>>>>option 1 was chosen')
+                return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
+            else:
+                # todo: verify ?????????
+                # print('>>>>>option 2 was chosen')
+                return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
+        else:
+            return False, [], [], -1, -1, [], []
     elif is_option_1_valid:
-        print('only 1st opetion. comapre to old')
+        # print('only 1st opetion. comapre to old')
         total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
-        if total_km_opt1 < total_km_old and total_time_opt1 <= total_time_old:
-            print('>>>>>option 1 is better than old')
+        if total_km_opt1 <= total_km_old and total_time_opt1 <= total_time_old:
+            # print('>>>>>option 1 is better than old')
+            return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
+        # print('>>>>>option 1 no better')
+        return False, [], [], -1, -1, [], []
     elif is_option_2_valid:
-        print('only 2nd optoin. comapre to old')
+        # print('only 2nd optoin. comapre to old')
         total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
-        if total_km_opt2 < total_km_old and total_time_opt2 <= total_time_old:
-            print('>>>>>option 2 is better than old')
+        if total_km_opt2 <= total_km_old and total_time_opt2 <= total_time_old:
+            # print('>>>>>option 2 is better than old')
+            return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
+        # print('>>>>>option 2 no better')
+        return False, [], [], -1, -1, [], []
     else:
-        print('nothing is valid')
-        return False
+        # print('nothing is valid')
+        return False, [], [], -1, -1, [], []
 
-#     to return a bool if swap, if yes i return bool, new route A, route nr A, new route B, new route nr B,
+
+def create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2):
+    new_data = []
+    for i in range(len(new_route_1)):
+        new_data.append([route_nr_1, new_route_1[i], 'city_tbd', kms_1[i], -1])
+    for j in range(len(new_route_2)):
+        new_data.append([route_nr_2, new_route_2[j], 'city_tbd', kms_2[j], -1])
+    return new_data
+
+
+def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data):
+    pass
+
 
 def two_opt_swap(output_df, data, n_iterations):
+    print(output_df.shape)
     A = make_distance_matrix(data)
     routes = df['City Nr.'].tolist()
     routes_of_routes = make_list_containing_lists_routes(routes)
 
     for i in range(n_iterations):
-        nodeA = random.randint(1, 133)
-        nodeB = routes[routes.index(nodeA) + 1]
-        nodeC = random.randint(1, 133)
-        nodeD = routes[routes.index(nodeC) + 1]
+        node_a = random.randint(1, 133)
+        node_b = routes[routes.index(node_a) + 1]
+        node_c = random.randint(1, 133)
+        node_d = routes[routes.index(node_c) + 1]
 
-        # makes sure that there is no invalid index or edges to swap are the same
-        if nodeB > 133 or nodeD > 133 or nodeA == nodeC:
+        # makes sure that there is no invalid index to get an index out of range exception
+        # or edges to swap are the same
+        if node_b > 133 or node_d > 133 or node_a == node_c:
             print('continued')
             continue
 
         # Basically if the km are lower for routes in total the swap can be made
         # but also the whole time needs to be still in the 8 visit and 10 john work time
         # print(routes_of_routes)
-        if are_edges_in_same_route(routes_of_routes, nodeA, nodeC):
+        if are_edges_in_same_route(routes_of_routes, node_a, node_c):
             print('in same route')
-            print('pass')
+            check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
             pass
 
         else:
-            check_swap(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data)
-            # print('not in same route')
+            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = check_swap_two_routes(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
+            if is_swap_good:
+                # dummy data
+                # route_nr_1 = 0
+                # route_nr_2 = 1
+                # kms_1 =[1,1,1,1,1,1,1]
+                # kms_2 =[1,1,1,1,1,1]
+                # new_route_1 = [0,107,103,25,26,121,0]
+                # new_route_2 = [0,120,115,100,91,0]
+
+                output_df.set_index('Route Nr.', inplace=True)
+                output_df.drop(route_nr_1, inplace=True)
+                output_df.drop(route_nr_2, inplace=True)
+
+                output_df = output_df.reset_index()
+
+                data_to_append = create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2)
+                new_routes_df = pd.DataFrame(data_to_append, columns=output_df.columns)
+                output_df = output_df.append(new_routes_df)
 
 
-#             here i add everything to output df
-#               in output df need to calculate total km again
+df = pd.read_excel('Ex2.1-2025115.xls')
+data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 100
+n_iterations = 100000
 two_opt_swap(df, data, n_iterations)
