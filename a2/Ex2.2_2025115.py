@@ -73,9 +73,9 @@ def make_list_containing_lists_routes(routes):
     return list_of_lists_of_routes
 
 
-def are_edges_in_same_route(routes_of_routes, nodeA, nodeC):
+def are_edges_in_same_route(routes_of_routes, node_a, node_c):
     for idx, route in enumerate(routes_of_routes):
-        if nodeA in route and nodeC in route:
+        if node_a in route and node_c in route:
             return True
     return False
 
@@ -232,6 +232,42 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
         return False, [], [], -1, -1, [], []
 
 
+def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data):
+    route_ = []
+    route_nr = -1
+
+    for route in routes_of_routes:
+        if node_a in route:
+            route_ = route
+            route_nr = routes_of_routes.index(route_)
+            break
+
+    print('Route')
+    print(route)
+    print("chosen nodes")
+    print(node_a)
+    print(node_c)
+    idx_a = route.index(node_a)
+    idx_c = route.index(node_c) # in this case actually D
+    # idx_b = idx_a + 1
+    # idx_c = idx_d - 1
+    # print(idx_a)
+    # print(idx_c)
+
+    print('index fiff')
+    index_diff = abs(idx_a - idx_c)
+    print(index_diff)
+    # if nodes are adjacent or there is only one node in between the chosen nodes
+    # there is no point to make a swap e.g. route is ABCDE and chosen are B and D, or C and D
+    # there will not be any difference when performing an exchange
+    if index_diff >= 3:
+        if idx_a > idx_c:
+            print('a is bigger')
+        else:
+            print('c is bigger')
+
+
+
 def create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2):
     new_data = []
     for i in range(len(new_route_1)):
@@ -241,12 +277,7 @@ def create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_
     return new_data
 
 
-def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data):
-    pass
-
-
 def two_opt_swap(output_df, data, n_iterations):
-    print(output_df.shape)
     A = make_distance_matrix(data)
     routes = df['City Nr.'].tolist()
     routes_of_routes = make_list_containing_lists_routes(routes)
@@ -260,14 +291,16 @@ def two_opt_swap(output_df, data, n_iterations):
         # makes sure that there is no invalid index to get an index out of range exception
         # or edges to swap are the same
         if node_b > 133 or node_d > 133 or node_a == node_c:
-            print('continued')
+            # print('continued')
             continue
 
         # Basically if the km are lower for routes in total the swap can be made
         # but also the whole time needs to be still in the 8 visit and 10 john work time
         # print(routes_of_routes)
         if are_edges_in_same_route(routes_of_routes, node_a, node_c):
-            print('in same route')
+            print("chosen nodes")
+            print(node_a)
+            print(node_c)
             check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
             pass
 
