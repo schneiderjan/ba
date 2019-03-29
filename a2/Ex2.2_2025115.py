@@ -4,7 +4,6 @@ import numpy as np
 import random
 
 
-
 def haversine(lon1, lat1, lon2, lat2):
     """
     Calculate the great circle distance between two points
@@ -264,12 +263,12 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
     if index_diff >= 3:
         if idx_a > idx_c:
             idx_d = idx_a - 1
-            new_route = route[:idx_c+1] + route[idx_d:idx_c:-1] + route[idx_a:]
+            new_route = route[:idx_c + 1] + route[idx_d:idx_c:-1] + route[idx_a:]
             recalculate_route(A, new_route, data)
 
         else:
             idx_b = idx_c - 1
-            new_route = route[:idx_a+1] + route[idx_b : idx_a:-1] + route[idx_c:]
+            new_route = route[:idx_a + 1] + route[idx_b: idx_a:-1] + route[idx_c:]
             recalculate_route(A, new_route, data)
 
     if len(new_route) > 0:
@@ -298,15 +297,17 @@ def update_output_df(output_df, data):
     print('after sort')
     total_dist = 0
     for idx, row in output_df.iterrows():
-        total_dist += output_df.at[idx, 'Total Distance in Route (km)']
-        output_df.at[idx, 'Total distance (km)'] = total_dist
+        if idx == 0:
+            total_dist += output_df.at[idx, 'Total Distance in Route (km)']
+            output_df.at[idx, 'Total distance (km)'] = total_dist
+        else:
+            total_dist += total_dist - output_df.at[idx, 'Total Distance in Route (km)']
 
         if row['City Name'] == 'city_tbd':
             idx_name = data.loc[data['Nr'] == row['City Nr.']].index[0]
             output_df.at[idx, 'City Name'] = data.at[idx_name, 'Name']
 
     return output_df
-
 
 
 def two_opt_swap(output_df, data, n_iterations):
@@ -330,7 +331,8 @@ def two_opt_swap(output_df, data, n_iterations):
         # but also the whole time needs to be still in the 8 visit and 10 john work time
         # print(routes_of_routes)
         if are_edges_in_same_route(routes_of_routes, node_a, node_c):
-            is_swap_good, new_route, route_nr, kms = check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
+            is_swap_good, new_route, route_nr, kms = check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df,
+                                                                          routes_of_routes, data)
             if is_swap_good:
                 output_df.set_index('Route Nr.', inplace=True)
                 output_df.drop(route_nr, inplace=True)
@@ -341,7 +343,14 @@ def two_opt_swap(output_df, data, n_iterations):
                 output_df = output_df.append(new_routes_df)
 
         else:
-            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = check_swap_two_routes(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
+            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = check_swap_two_routes(A,
+                                                                                                                 node_a,
+                                                                                                                 node_b,
+                                                                                                                 node_c,
+                                                                                                                 node_d,
+                                                                                                                 output_df,
+                                                                                                                 routes_of_routes,
+                                                                                                                 data)
             if is_swap_good:
                 # dummy data
                 # route_nr_1 = 0
@@ -364,9 +373,10 @@ def two_opt_swap(output_df, data, n_iterations):
     output_df = update_output_df(output_df, data)
     return output_df
 
+
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 100000
+n_iterations = 10000
 output_df = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)

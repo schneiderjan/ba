@@ -154,9 +154,10 @@ def nearest_neighbor(data, start=0):
         columns=['Route Nr.', 'City Nr.', 'City Name', 'Total Distance in Route (km)', 'Total distance (km)'])
     loop_counter = 0
     route_distance = 0
-    route = [start]
+    # route = [start]
 
     while True:
+        route = [start]
 
         output_df = output_df.append(
             {'Route Nr.': route_counter, 'City Nr.': 0, 'City Name': data.loc[0].Name,
@@ -206,18 +207,7 @@ def nearest_neighbor(data, start=0):
                     ignore_index=True)
 
                 loop_counter = 0
-            # elif i == N - 2:
-            #     end_loc = 0
-            #     route.append(end_loc)
-            #     route_distance += A[current_index, end_loc]
-            #     total_distance += A[current_index, end_loc]
-            #     output_df = output_df.append(
-            #         {'Route Nr.': route_counter, 'City Nr.': end_loc, 'City Name': data.loc[end_loc].Name,
-            #          'Total Distance in Route (km)': route_distance, 'Total distance (km)': total_distance},
-            #         ignore_index=True)
-            # else:
-            #     continue
-            elif loop_counter == N:
+            elif i == N - 2:
                 end_loc = 0
                 route.append(end_loc)
                 route_distance += A[current_index, end_loc]
@@ -226,21 +216,33 @@ def nearest_neighbor(data, start=0):
                     {'Route Nr.': route_counter, 'City Nr.': end_loc, 'City Name': data.loc[end_loc].Name,
                      'Total Distance in Route (km)': route_distance, 'Total distance (km)': total_distance},
                     ignore_index=True)
+            else:
+                continue
+            # elif loop_counter == N:
+            #     end_loc = 0
+            #     route.append(end_loc)
+            #     route_distance += A[current_index, end_loc]
+            #     total_distance += A[current_index, end_loc]
+            #     output_df = output_df.append(
+            #         {'Route Nr.': route_counter, 'City Nr.': end_loc, 'City Name': data.loc[end_loc].Name,
+            #          'Total Distance in Route (km)': route_distance, 'Total distance (km)': total_distance},
+            #         ignore_index=True)
+            #
+            #     route_counter += 1
+            #     remaining_travel_time = 10
+            #     remaining_visiting_time = 8
+            #     route_distance = 0
+            #     route = [start]
+            #     loop_counter = 0
 
-                route_counter += 1
-                remaining_travel_time = 10
-                remaining_visiting_time = 8
-                route_distance = 0
-                route = [start]
-                loop_counter = 0
-
-            loop_counter += 1
+            # loop_counter += 1
 
         # print(route)
         # routes.append(route)
-        # route_counter += 1
-        # remaining_travel_time = 10
-        # remaining_visiting_time = 8
+        route_counter += 1
+        route_distance = 0
+        remaining_travel_time = 10
+        remaining_visiting_time = 8
 
         if break_flag:
             break
