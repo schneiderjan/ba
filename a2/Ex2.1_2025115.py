@@ -30,7 +30,9 @@ def calculate_travel_time(distance):
     :return: time spent travelling
     """
     driving_speed = 80
-    return distance / driving_speed
+    t = distance / driving_speed
+
+    return t
 
 
 def make_distance_matrix(df):
@@ -54,8 +56,13 @@ def are_all_locations_visited(mask):
     are_all_visited = all(x == False for x in mask_list)
     return are_all_visited
 
+
 def get_visiting_time(df, index):
     store_type = df.loc[index].Type
+    if store_type == 'nan':
+        print(index)
+        print(df.loc[index].Name)
+        print(df.loc[index].Type)
     if store_type == "Jumbo":
         return 1.5
     else:
@@ -75,11 +82,18 @@ def is_visit_in_time_limit(remaining_travel_time, remaining_visiting_time, time_
     :param time_to_hq:
     :return: If all conditions are ok true, otherwise, false.
     """
+
+    # print('constraints')
+    # print('travel time left: {}'. format(remaining_travel_time - time_to_travel - visiting_time))
+    # print('visiting time left: {}'. format(remaining_visiting_time - time_to_travel - visiting_time))
+    # print('go home time left: {}'. format(remaining_travel_time - time_to_hq - time_to_travel - visiting_time))
     if (remaining_travel_time - time_to_travel - visiting_time) >= 0 and (
             remaining_visiting_time - time_to_travel - visiting_time) >= 0 and (
-            remaining_travel_time - time_to_hq - time_to_travel - visiting_time) >= 0:
+        remaining_travel_time - time_to_hq - time_to_travel - visiting_time) >= 0:
+        # print('TRUE')
         return True
     else:
+        # print('FALSE')
         return False
 
 
@@ -103,16 +117,16 @@ def can_next_location_be_visited(current_index, next_index, remaining_travel_tim
         remaining_travel_time -= time_to_travel
         remaining_travel_time -= visiting_time
         remaining_visiting_time -= visiting_time
-        return True, remaining_travel_time, remaining_travel_time, distance_to_travel
+        return True, remaining_travel_time, remaining_visiting_time, distance_to_travel
     elif remaining_travel_time < 10 and is_visit_in_time_limit(remaining_travel_time, remaining_visiting_time,
                                                                time_to_travel, visiting_time, time_to_hq):
         remaining_travel_time -= time_to_travel
         remaining_travel_time -= visiting_time
         remaining_visiting_time -= time_to_travel
         remaining_visiting_time -= visiting_time
-        return True, remaining_travel_time, remaining_travel_time, distance_to_travel
+        return True, remaining_travel_time, remaining_visiting_time, distance_to_travel
     else:
-        return False, remaining_travel_time, remaining_travel_time, distance_to_travel
+        return False, remaining_travel_time, remaining_visiting_time, distance_to_travel
 
 
 def nearest_neighbor(data, start=0):
@@ -134,14 +148,15 @@ def nearest_neighbor(data, start=0):
     mask = np.ones(N, dtype=bool)  # boolean values indicating which locations have not been visited
     mask[start] = False
 
-    routes = []
+    # routes = []
 
     output_df = pd.DataFrame(
         columns=['Route Nr.', 'City Nr.', 'City Name', 'Total Distance in Route (km)', 'Total distance (km)'])
+    loop_counter = 0
+    route_distance = 0
+    route = [start]
 
     while True:
-        route_distance = 0
-        route = [start]
 
         output_df = output_df.append(
             {'Route Nr.': route_counter, 'City Nr.': 0, 'City Name': data.loc[0].Name,
@@ -149,11 +164,18 @@ def nearest_neighbor(data, start=0):
             ignore_index=True)
 
         for i in range(N - 1):
+            # print('index {}'.format(i))
             current_index = route[-1]
+            # if current_index == 91:
+            #     print('fuk you')
+            #     print(route)
+            #     print(remaining_travel_time)
+            #     print(remaining_visiting_time)
 
             # print(mask)
             # print(route)
             if are_all_locations_visited(mask):
+                print('all visited')
                 break_flag = True
                 end_loc = 0
                 route.append(end_loc)
@@ -166,13 +188,13 @@ def nearest_neighbor(data, start=0):
                 break
 
             next_index = np.argmin(A[current_index][mask])  # find minimum of remaining locations
-
-            is_visitable, remaining_travel_time, remaining_travel_time, distance_to_travel = \
-                can_next_location_be_visited(current_index, next_index, remaining_travel_time, remaining_visiting_time,
+            next_loc = np.arange(N)[mask][next_index]
+            is_visitable, remaining_travel_time, remaining_visiting_time, distance_to_travel = \
+                can_next_location_be_visited(current_index, next_loc, remaining_travel_time, remaining_visiting_time,
                                              data)
-            if is_visitable:
-                next_loc = np.arange(N)[mask][next_index]  # convert to original location
 
+            if is_visitable:
+                # next_loc = np.arange(N)[mask][next_index]  # convert to original location
                 route.append(next_loc)
                 mask[next_loc] = False
                 route_distance += A[current_index, next_loc]
@@ -182,7 +204,20 @@ def nearest_neighbor(data, start=0):
                     {'Route Nr.': route_counter, 'City Nr.': next_loc, 'City Name': data.loc[next_loc].Name,
                      'Total Distance in Route (km)': route_distance, 'Total distance (km)': total_distance},
                     ignore_index=True)
-            elif i == N - 2:
+
+                loop_counter = 0
+            # elif i == N - 2:
+            #     end_loc = 0
+            #     route.append(end_loc)
+            #     route_distance += A[current_index, end_loc]
+            #     total_distance += A[current_index, end_loc]
+            #     output_df = output_df.append(
+            #         {'Route Nr.': route_counter, 'City Nr.': end_loc, 'City Name': data.loc[end_loc].Name,
+            #          'Total Distance in Route (km)': route_distance, 'Total distance (km)': total_distance},
+            #         ignore_index=True)
+            # else:
+            #     continue
+            elif loop_counter == N:
                 end_loc = 0
                 route.append(end_loc)
                 route_distance += A[current_index, end_loc]
@@ -191,19 +226,27 @@ def nearest_neighbor(data, start=0):
                     {'Route Nr.': route_counter, 'City Nr.': end_loc, 'City Name': data.loc[end_loc].Name,
                      'Total Distance in Route (km)': route_distance, 'Total distance (km)': total_distance},
                     ignore_index=True)
-            else:
-                continue
+
+                route_counter += 1
+                remaining_travel_time = 10
+                remaining_visiting_time = 8
+                route_distance = 0
+                route = [start]
+                loop_counter = 0
+
+            loop_counter += 1
 
         # print(route)
-        routes.append(route)
-        route_counter += 1
-        remaining_travel_time = 10
-        remaining_visiting_time = 8
+        # routes.append(route)
+        # route_counter += 1
+        # remaining_travel_time = 10
+        # remaining_visiting_time = 8
 
         if break_flag:
             break
 
     return output_df
+
 
 # ex1 nearest neighbour
 # EMTE likes to know how many days and how many kilometers John needs in total to visit all the stores.
