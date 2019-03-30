@@ -153,30 +153,23 @@ def get_old_routes_total_values(A, route_1, route_2, data):
 
 
 def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data):
-    # route_1 = []
-    # route_nr_a = -1
-    # route_2 = []
-    # route_nr_c = -1
-    #
-    #
-    #
-    # for route in routes_of_routes:
-    #     if nodeA in route:
-    #         route_1 = route
-    #         route_nr_a = routes_of_routes.index(route)
-    #     elif nodeC in route:
-    #         route_2 = route
-    #         route_nr_c = routes_of_routes.index(route)
-    #
-    #     if len(route_1) > 0 and len(route_2) > 0:
-    #         break
-    route_1 = [0,127,15,65,30,0]
-    route_2 = [0,118,117,70,21,69,0]
-    route_nr_a = 23
-    route_nr_c = 8
-    nodeA = 15
-    nodeC = 69
+    route_1 = []
+    route_nr_a = -1
+    route_2 = []
+    route_nr_c = -1
 
+
+
+    for route in routes_of_routes:
+        if nodeA in route:
+            route_1 = route
+            route_nr_a = routes_of_routes.index(route)
+        elif nodeC in route:
+            route_2 = route
+            route_nr_c = routes_of_routes.index(route)
+
+        if len(route_1) > 0 and len(route_2) > 0:
+            break
     idx_a = route_1.index(nodeA)
     idx_b = idx_a + 1
     idx_c = route_2.index(nodeC)
