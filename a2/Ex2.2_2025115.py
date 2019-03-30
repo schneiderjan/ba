@@ -244,13 +244,13 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
 
 
 def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data):
-    route_ = []
+    route = []
     route_nr = -1
 
     for route in routes_of_routes:
         if node_a in route:
-            route_ = route
-            route_nr = routes_of_routes.index(route_)
+            route = route
+            route_nr = routes_of_routes.index(route)
             break
 
     # print('Route')
