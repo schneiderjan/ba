@@ -86,8 +86,8 @@ def recalculate_route(A, route, data):
     kms = [0]
 
     current_loc = route[0]
-
-    for idx in range(1, len(route)):
+    n = len(route)
+    for idx in range(1, n):
         if idx == 1:
             next_loc = route[idx]
             travel_dist = A[current_loc, next_loc]
@@ -102,8 +102,21 @@ def recalculate_route(A, route, data):
             kms.append(kms[-1] + travel_dist)
 
             current_loc = next_loc
+        elif idx == n-1:
+            next_loc = route[idx]
+
+            travel_dist = A[current_loc, next_loc]
+            travel_time = calculate_travel_time(travel_dist)
+            total_travel_time += travel_time
+            total_visiting_time += travel_time
+
+            total_km += travel_dist
+            kms.append(kms[-1] + travel_dist)
+
+            current_loc = next_loc
         else:
             next_loc = route[idx]
+
             travel_dist = A[current_loc, next_loc]
             travel_time = calculate_travel_time(travel_dist)
             visiting_time = get_visiting_time(data, next_loc)
@@ -119,20 +132,20 @@ def recalculate_route(A, route, data):
             current_loc = next_loc
 
         if total_visiting_time > 8 or total_travel_time > 10:
-            print('route bad w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time,
-                                                                                     total_visiting_time,
-                                                                                     total_km))
+            # print('route bad w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time,
+            #                                                                          total_visiting_time,
+            #                                                                          total_km))
             return False, total_km, kms
-    print('route good w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time, total_visiting_time,
-                                                                             total_km))
+    # print('route good w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time, total_visiting_time,
+    #                                                                          total_km))
     return True, total_km, kms
 
 
 def get_old_routes_total_values(A, route_1, route_2, data):
     is_valid, total_km_1, kms_1 = recalculate_route(A, route_1, data)
     is_valid, total_km_2, kms_2 = recalculate_route(A, route_2, data)
-    total_km_old = total_km_1 + total_km_2
 
+    total_km_old = total_km_1 + total_km_2
     return total_km_old
 
 
@@ -142,26 +155,16 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
     route_2 = []
     route_nr_c = -1
 
-    route_x = [0, 23, 22, 24, 92, 58, 130, 0]
-    route_y = [0, 49, 51, 50, 48, 79, 0]
-    nodeA = 58
-    nodeC = 79
+    for route in routes_of_routes:
+        if nodeA in route:
+            route_1 = route
+            route_nr_a = routes_of_routes.index(route)
+        elif nodeC in route:
+            route_2 = route
+            route_nr_c = routes_of_routes.index(route)
 
-    # for route in routes_of_routes:
-    #     if nodeA in route:
-    #         route_1 = route
-    #         route_nr_a = routes_of_routes.index(route)
-    #     elif nodeC in route:
-    #         route_2 = route
-    #         route_nr_c = routes_of_routes.index(route)
-    #
-    #     if len(route_1) > 0 and len(route_2) > 0:
-    #         break
-
-    route_1 = route_x
-    route_2 = route_y
-    route_nr_a = 12
-    route_nr_c = 21
+        if len(route_1) > 0 and len(route_2) > 0:
+            break
 
     idx_a = route_1.index(nodeA)
     idx_b = idx_a + 1
@@ -195,37 +198,30 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
     is_option_1_valid = False
     is_route_valid, total_km_ad, kms_ad = recalculate_route(A, new_route_ad, data)
     if is_route_valid:
-        print('ad valid')
         is_route_valid, total_km_bc, kms_bc = recalculate_route(A, new_route_bc, data)
         if is_route_valid:
-            print('bc valid')
-            print('op1 good')
             is_option_1_valid = True
             total_km_opt1 = total_km_ad + total_km_bc
-        print('her')
 
     # option2
     total_km_opt2 = -1
     is_option_2_valid = False
     is_route_valid, total_km_ac, kms_ac = recalculate_route(A, new_route_ac, data)
     if is_route_valid:
-        print('ac valid')
         is_route_valid, total_km_bd, kms_bd = recalculate_route(A, new_route_bd, data)
         if is_route_valid:
-            print('bd valid')
-            print('op2 good')
             is_option_2_valid = True
             total_km_opt2 = total_km_ac + total_km_bd
-
-    print('new routes')
-    print('ad -bc')
-    print(new_route_ad)
-    print(new_route_bc)
-    print('valid: {} //////////////////'.format(is_option_1_valid))
-    print('ac - bd')
-    print(new_route_ac)
-    print(new_route_bd)
-    print('valid: {} ////////////////////'.format(is_option_2_valid))
+    #
+    # print('new routes')
+    # print('ad -bc')
+    # print(new_route_ad)
+    # print(new_route_bc)
+    # print('valid: {} //////////////////'.format(is_option_1_valid))
+    # print('ac - bd')
+    # print(new_route_ac)
+    # print(new_route_bd)
+    # print('valid: {} ////////////////////'.format(is_option_2_valid))
 
     total_km_old = get_old_routes_total_values(A, route_1, route_2, data)
     # print('opt1: {}km , valid: {}'.format(total_km_opt1, is_option_1_valid))
@@ -387,6 +383,6 @@ def two_opt_swap(output_df, data, n_iterations):
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 1
+n_iterations = 10000
 output_df = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)
