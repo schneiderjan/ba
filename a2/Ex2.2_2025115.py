@@ -87,6 +87,9 @@ def recalculate_route(A, route, data):
     kms = [0]
 
     current_loc = route[0]
+
+    print('recalcuate route')
+    print(route)
     for idx in range(1, len(route)):
         if idx == 1:
             next_loc = route[idx]
@@ -119,20 +122,19 @@ def recalculate_route(A, route, data):
             current_loc = next_loc
 
         if total_visiting_time > 8 or total_travel_time > 10:
-            return False, -1, -1, -1
+            return False, total_km, kms
 
-    # print('route good w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time, total_visiting_time,
-    #                                                                          total_km))
-    return True, travel_time, total_km, kms
+    print('route good w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time, total_visiting_time,
+                                                                             total_km))
+    return True, total_km, kms
 
 
 def get_old_routes_total_values(A, route_1, route_2, data):
-    is_valid, travel_time_1, total_km_1, kms_1 = recalculate_route(A, route_1, data)
-    is_valid, travel_time_2, total_km_2, kms_2 = recalculate_route(A, route_2, data)
+    is_valid, total_km_1, kms_1 = recalculate_route(A, route_1, data)
+    is_valid, total_km_2, kms_2 = recalculate_route(A, route_2, data)
     total_km_old = total_km_1 + total_km_2
-    total_time_old = travel_time_1 + travel_time_2
 
-    return total_km_old, total_time_old
+    return total_km_old
 
 
 def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data):
@@ -168,66 +170,47 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
     is_option_1_valid = False
     is_option_2_valid = False
 
-    # todo: probably i can prettify the whole block until return
     # option1
     total_km_opt1 = -1
-    total_time_opt1 = -1
-    is_route_valid, travel_time_ad, total_km_ad, kms_ad = recalculate_route(A, new_route_ad, data)
+    is_route_valid, total_km_ad, kms_ad = recalculate_route(A, new_route_ad, data)
     if is_route_valid:
-        is_route_valid, travel_time_bc, total_km_bc, kms_bc = recalculate_route(A, new_route_bc, data)
+        print('opt11')
+        is_route_valid, total_km_bc, kms_bc = recalculate_route(A, new_route_bc, data)
         if is_route_valid:
+            print('opt12')
             is_option_1_valid = True
             total_km_opt1 = total_km_ad + total_km_bc
-            total_time_opt1 = travel_time_ad + travel_time_bc
 
     # option2
     total_km_opt2 = -1
-    total_time_opt2 = -1
-    is_route_valid, travel_time_ac, total_km_ac, kms_ac = recalculate_route(A, new_route_ac, data)
+    # total_time_opt2 = -1
+    is_route_valid, total_km_ac, kms_ac = recalculate_route(A, new_route_ac, data)
     if is_route_valid:
-        is_route_valid, travel_time_bd, total_km_bd, kms_bd = recalculate_route(A, new_route_bd, data)
+        print('opt21')
+        is_route_valid, total_km_bd, kms_bd = recalculate_route(A, new_route_bd, data)
         if is_route_valid:
+            print('opt22')
             is_option_2_valid = True
             total_km_opt2 = total_km_ac + total_km_bd
-            total_time_opt2 = travel_time_ac + travel_time_bd
+            # total_time_opt2 = travel_time_ac + travel_time_bd
 
-    if is_option_1_valid and is_option_2_valid:
-        # print('both are nice. please compare also to old stuff')
-        total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
-        # old one is better than both
-        if total_km_old <= total_km_opt1 and total_km_old <= total_km_opt2 and total_time_old <= total_km_opt1 and total_time_old <= total_time_opt2:
-            # print('>>>>>change nothing.')
-            return False, [], [], -1, -1, [], []
-        # both new options are better
-        elif total_km_old >= total_km_opt1 and total_km_old >= total_km_opt2 and total_time_old >= total_km_opt1 and total_time_old >= total_time_opt2:
-            # print('>>>>> opt1 or opt2 is better than old')
-            if total_km_opt1 <= total_km_opt2 and total_time_opt1 <= total_time_opt2:
-                # print('>>>>>option 1 was chosen')
-                return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
-            else:
-                # todo: verify ?????????
-                # print('>>>>>option 2 was chosen')
-                return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
-        else:
-            return False, [], [], -1, -1, [], []
-    elif is_option_1_valid:
-        # print('only 1st opetion. comapre to old')
-        total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
-        if total_km_opt1 <= total_km_old and total_time_opt1 <= total_time_old:
-            # print('>>>>>option 1 is better than old')
+    total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
+    # print('opt1: {}km , valid: {}'.format(total_km_opt1, is_option_1_valid))
+    # print('opt2: {}km , valid: {}'.format(total_km_opt2, is_option_2_valid))
+    # print('old: {}km'.format(total_km_old))
+
+    if is_option_1_valid and total_km_opt1 < total_km_old:
+        if is_option_2_valid and total_km_opt1 < total_km_opt2:
+            print('1 chosen')
             return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
-        # print('>>>>>option 1 no better')
-        return False, [], [], -1, -1, [], []
-    elif is_option_2_valid:
-        # print('only 2nd optoin. comapre to old')
-        total_km_old, total_time_old = get_old_routes_total_values(A, route_1, route_2, data)
-        if total_km_opt2 <= total_km_old and total_time_opt2 <= total_time_old:
-            # print('>>>>>option 2 is better than old')
-            return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
-        # print('>>>>>option 2 no better')
-        return False, [], [], -1, -1, [], []
+        elif not is_option_2_valid:
+            print('1 chosen')
+            return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
+    elif is_option_2_valid and total_km_opt2 < total_km_old:
+        print('chosen')
+        return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
     else:
-        # print('nothing is valid')
+        print('nothing is valid')
         return False, [], [], -1, -1, [], []
 
 
@@ -264,15 +247,16 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
         if idx_a > idx_c:
             idx_d = idx_a - 1
             new_route = route[:idx_c + 1] + route[idx_d:idx_c:-1] + route[idx_a:]
-            recalculate_route(A, new_route, data)
+            # recalculate_route(A, new_route, data)
 
         else:
             idx_b = idx_c - 1
             new_route = route[:idx_a + 1] + route[idx_b: idx_a:-1] + route[idx_c:]
-            recalculate_route(A, new_route, data)
+            # recalculate_route(A, new_route, data)
 
     if len(new_route) > 0:
-        is_route_valid, travel_time, total_km, kms = recalculate_route(A, new_route, data)
+        # todo: need check vs old
+        is_route_valid, total_km, kms = recalculate_route(A, new_route, data)
         if is_route_valid:
             return True, new_route, route_nr, kms
 
@@ -343,14 +327,8 @@ def two_opt_swap(output_df, data, n_iterations):
                 output_df = output_df.append(new_routes_df)
 
         else:
-            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = check_swap_two_routes(A,
-                                                                                                                 node_a,
-                                                                                                                 node_b,
-                                                                                                                 node_c,
-                                                                                                                 node_d,
-                                                                                                                 output_df,
-                                                                                                                 routes_of_routes,
-                                                                                                                 data)
+            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = \
+                check_swap_two_routes(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
             if is_swap_good:
                 # dummy data
                 # route_nr_1 = 0
@@ -377,6 +355,6 @@ def two_opt_swap(output_df, data, n_iterations):
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 10000
+n_iterations = 5
 output_df = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)
