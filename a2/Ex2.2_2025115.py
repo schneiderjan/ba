@@ -259,7 +259,14 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
     index_diff = abs(idx_a - idx_c)
     # print('index dff {}'.format(index_diff))
     new_route = []
-    if index_diff == 1:
+    if index_diff >= 3:
+        if idx_a > idx_c:
+            idx_d = idx_a - 1
+            new_route = route[:idx_c + 1] + route[idx_d:idx_c:-1] + route[idx_a:]
+        else:
+            idx_b = idx_c - 1
+            new_route = route[:idx_a + 1] + route[idx_b: idx_a:-1] + route[idx_c:]
+    elif index_diff == 1:
         route[idx_a] = node_c
         route[idx_c] = node_a
         new_route = route
@@ -268,14 +275,7 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
             new_route = route[:idx_c] + route[idx_a:idx_c-1:-1] + route[idx_a+1:]
         else:
             new_route = route[:idx_a] + route[idx_c:idx_a-1:-1] + route[idx_c+1:]
-    elif index_diff >= 3:
-        if idx_a > idx_c:
-            idx_d = idx_a - 1
-            new_route = route[:idx_c + 1] + route[idx_d:idx_c:-1] + route[idx_a:]
-        else:
-            idx_b = idx_c - 1
-            new_route = route[:idx_a + 1] + route[idx_b: idx_a:-1] + route[idx_c:]
-
+    
     if len(new_route) > 0:
         is_route_valid, total_km, kms = recalculate_route(A, new_route, data)
         total_old_km = get_old_routes_total_values(A, route, [], data)
@@ -372,5 +372,5 @@ df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
 n_iterations = 50000
-output_df = two_opt_swap(df, data, n_iterations)
+output_df, tabu_list = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)
