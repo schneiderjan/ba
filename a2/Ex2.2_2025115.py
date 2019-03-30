@@ -224,7 +224,7 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
     for route in routes_of_routes:
         if node_a in route:
             route_ = route
-            route_nr = routes_of_routes.index(route)
+            route_nr = routes_of_routes.index(route_)
             break
 
     idx_a = route_.index(node_a)
@@ -240,9 +240,9 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
             idx_b = idx_c - 1
             new_route = route_[:idx_a + 1] + route_[idx_b: idx_a:-1] + route_[idx_c:]
     elif index_diff == 1:
-        route_[idx_a] = node_c
-        route_[idx_c] = node_a
         new_route = route_
+        new_route[idx_a] = node_c
+        new_route[idx_c] = node_a
     elif index_diff == 2:
         if idx_a > idx_c:
             new_route = route_[:idx_c] + route_[idx_a:idx_c-1:-1] + route_[idx_a+1:]
@@ -349,6 +349,6 @@ def two_opt_swap(output_df, data, n_iterations):
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 100000
+n_iterations = 50000
 output_df = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)
