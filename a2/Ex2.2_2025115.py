@@ -102,7 +102,7 @@ def recalculate_route(A, route, data):
             kms.append(kms[-1] + travel_dist)
 
             current_loc = next_loc
-        elif idx == n-1:
+        elif idx == n - 1:
             next_loc = route[idx]
 
             travel_dist = A[current_loc, next_loc]
@@ -142,11 +142,15 @@ def recalculate_route(A, route, data):
 
 
 def get_old_routes_total_values(A, route_1, route_2, data):
-    is_valid, total_km_1, kms_1 = recalculate_route(A, route_1, data)
-    is_valid, total_km_2, kms_2 = recalculate_route(A, route_2, data)
+    if len(route_2) > 0:
+        is_valid, total_km_1, kms_1 = recalculate_route(A, route_1, data)
+        is_valid, total_km_2, kms_2 = recalculate_route(A, route_2, data)
 
-    total_km_old = total_km_1 + total_km_2
-    return total_km_old
+        total_km_old = total_km_1 + total_km_2
+        return total_km_old
+    else:
+        is_valid, total_km, kms = recalculate_route(A, route_1, data)
+        return total_km
 
 
 def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data):
@@ -230,13 +234,10 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
 
     if is_option_1_valid and total_km_opt1 < total_km_old:
         if is_option_2_valid and total_km_opt1 < total_km_opt2:
-            print('1 chosen')
             return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
         elif not is_option_2_valid:
-            print('1 chosen')
             return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
     elif is_option_2_valid and total_km_opt2 < total_km_old:
-        print('2 chosen')
         return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
     else:
         # print('nothing is valid')
@@ -253,6 +254,10 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
             route_nr = routes_of_routes.index(route)
             break
 
+    # route = [0,120,115,100,91,131,0]
+    # route_nr = 0
+    # node_a = 115
+    # node_c = 91
     # print('Route')
     # print(route)
     # print("chosen nodes")
@@ -265,28 +270,30 @@ def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of
     # print(idx_a)
     # print(idx_c)
 
-    # print('index fiff')
     index_diff = abs(idx_a - idx_c)
-    # print(index_diff)
+    # print('index dff {}'.format(index_diff))
     new_route = []
-    # if nodes are adjacent or there is only one node in between the chosen nodes
-    # there is no point to make a swap e.g. route is ABCDE and chosen are B and D, or C and D
-    # there will not be any difference when performing an exchange
-    if index_diff >= 3:
+    if index_diff == 1:
+        route[idx_a] = node_c
+        route[idx_c] = node_a
+        new_route = route
+    elif index_diff == 2:
+        if idx_a > idx_c:
+            new_route = route[:idx_c] + route[idx_a:idx_c-1:-1] + route[idx_a+1:]
+        else:
+            new_route = route[:idx_a] + route[idx_c:idx_a-1:-1] + route[idx_c+1:]
+    elif index_diff >= 3:
         if idx_a > idx_c:
             idx_d = idx_a - 1
             new_route = route[:idx_c + 1] + route[idx_d:idx_c:-1] + route[idx_a:]
-            # recalculate_route(A, new_route, data)
-
         else:
             idx_b = idx_c - 1
             new_route = route[:idx_a + 1] + route[idx_b: idx_a:-1] + route[idx_c:]
-            # recalculate_route(A, new_route, data)
 
     if len(new_route) > 0:
-        # todo: need check vs old
         is_route_valid, total_km, kms = recalculate_route(A, new_route, data)
-        if is_route_valid:
+        total_old_km = get_old_routes_total_values(A, route, [], data)
+        if is_route_valid and total_km < total_old_km:
             return True, new_route, route_nr, kms
 
     return False, [], -1, []
@@ -307,14 +314,14 @@ def update_output_df(output_df, data):
     output_df.sort_values(by=['Route Nr.', 'Total Distance in Route (km)'], axis=0, inplace=True)
     output_df = output_df.reset_index()
     output_df.to_excel('after_sort.xls', index=False)
-    print('after sort')
     total_dist = 0
     for idx, row in output_df.iterrows():
-        if idx == 0:
-            total_dist += output_df.at[idx, 'Total Distance in Route (km)']
+        dist = output_df.at[idx, 'Total Distance in Route (km)']
+        if dist == 0:
             output_df.at[idx, 'Total distance (km)'] = total_dist
         else:
-            total_dist += total_dist - output_df.at[idx, 'Total Distance in Route (km)']
+            total_dist += dist - output_df.at[idx - 1, 'Total Distance in Route (km)']
+            output_df.at[idx, 'Total distance (km)'] = total_dist
 
         if row['City Name'] == 'city_tbd':
             idx_name = data.loc[data['Nr'] == row['City Nr.']].index[0]
@@ -359,17 +366,9 @@ def two_opt_swap(output_df, data, n_iterations):
             is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = \
                 check_swap_two_routes(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
             if is_swap_good:
-                # dummy data
-                # route_nr_1 = 0
-                # route_nr_2 = 1
-                # kms_1 =[1,1,1,1,1,1,1]
-                # kms_2 =[1,1,1,1,1,1]
-                # new_route_1 = [0,107,103,25,26,121,0]
-                # new_route_2 = [0,120,115,100,91,0]
                 output_df.set_index('Route Nr.', inplace=True)
                 output_df.drop(route_nr_1, inplace=True)
                 output_df.drop(route_nr_2, inplace=True)
-
                 output_df = output_df.reset_index()
 
                 data_to_append = create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2)
@@ -383,6 +382,6 @@ def two_opt_swap(output_df, data, n_iterations):
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 10000
+n_iterations = 1000
 output_df = two_opt_swap(df, data, n_iterations)
-output_df.to_excel('Ex2.2-2025115.xls', index=False)
+output_df.to_excel('Ex2.2-2025115.xls', index=False, index_label=False)
