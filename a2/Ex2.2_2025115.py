@@ -152,7 +152,7 @@ def get_old_routes_total_values(A, route_1, route_2, data):
         return total_km
 
 
-def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_routes, data):
+def check_swap_two_routes(A, nodeA, nodeC, routes_of_routes, data):
     route_1 = []
     route_nr_a = -1
     route_2 = []
@@ -217,7 +217,7 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
         return False, [], [], -1, -1, [], []
 
 
-def check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data):
+def check_swap_one_route(A, node_a, node_c, output_df, routes_of_routes, data):
     route_ = []
     route_nr = -1
 
@@ -298,24 +298,23 @@ def two_opt_swap(output_df, data, n_iterations):
     for i in range(n_iterations):
         if i % 1000 == 0:
             print('Iteration {}'.format(i))
-        if i == 49999:
-            print('49999')
 
         node_a = random.randint(1, 133)
-        node_b = routes[routes.index(node_a) + 1]
+        # node_b = routes[routes.index(node_a) + 1]
         node_c = random.randint(1, 133)
-        node_d = routes[routes.index(node_c) + 1]
+        # node_d = routes[routes.index(node_c) + 1]
 
         # makes sure that there is no invalid index to get an index out of range exception
         # or edges to swap are the same
-        if node_b > 133 or node_d > 133 or node_a == node_c:
+        # if node_b > 133 or node_d > 133 or node_a == node_c:
+        #     continue
+        if node_a == node_c:
             continue
 
         # Basically if the km are lower for routes in total the swap can be made
         # but also the whole time needs to be still in the 8 visit and 10 john work time
         if are_edges_in_same_route(routes_of_routes, node_a, node_c):
-            is_swap_good, new_route, route_nr, kms = check_swap_one_route(A, node_a, node_b, node_c, node_d, output_df,
-                                                                          routes_of_routes, data)
+            is_swap_good, new_route, route_nr, kms = check_swap_one_route(A, node_a, node_c, routes_of_routes, data)
             if is_swap_good:
                 output_df.set_index('Route Nr.', inplace=True)
                 output_df.drop(route_nr, inplace=True)
@@ -328,7 +327,7 @@ def two_opt_swap(output_df, data, n_iterations):
                 routes_of_routes[route_nr] = new_route
         else:
             is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = \
-                check_swap_two_routes(A, node_a, node_b, node_c, node_d, output_df, routes_of_routes, data)
+                check_swap_two_routes(A, node_a, node_c, routes_of_routes, data)
             if is_swap_good:
                 output_df.set_index('Route Nr.', inplace=True)
                 output_df.drop(route_nr_1, inplace=True)
