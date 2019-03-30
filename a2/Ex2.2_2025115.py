@@ -217,7 +217,7 @@ def check_swap_two_routes(A, nodeA, nodeC, routes_of_routes, data):
         return False, [], [], -1, -1, [], []
 
 
-def check_swap_one_route(A, node_a, node_c, output_df, routes_of_routes, data):
+def check_swap_one_route(A, node_a, node_c, routes_of_routes, data):
     route_ = []
     route_nr = -1
 
