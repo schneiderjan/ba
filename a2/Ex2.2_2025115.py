@@ -216,22 +216,8 @@ def check_swap_two_routes(A, nodeA, nodeB, nodeC, nodeD, output_df, routes_of_ro
         if is_route_valid:
             is_option_2_valid = True
             total_km_opt2 = total_km_ac + total_km_bd
-    #
-    # print('new routes')
-    # print('ad -bc')
-    # print(new_route_ad)
-    # print(new_route_bc)
-    # print('valid: {} //////////////////'.format(is_option_1_valid))
-    # print('ac - bd')
-    # print(new_route_ac)
-    # print(new_route_bd)
-    # print('valid: {} ////////////////////'.format(is_option_2_valid))
 
     total_km_old = get_old_routes_total_values(A, route_1, route_2, data)
-    # print('opt1: {}km , valid: {}'.format(total_km_opt1, is_option_1_valid))
-    # print('opt2: {}km , valid: {}'.format(total_km_opt2, is_option_2_valid))
-    # print('old: {}km'.format(total_km_old))
-
     if is_option_1_valid and total_km_opt1 < total_km_old:
         if is_option_2_valid and total_km_opt1 < total_km_opt2:
             return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
@@ -336,6 +322,9 @@ def two_opt_swap(output_df, data, n_iterations):
     routes_of_routes = make_list_containing_lists_routes(routes)
 
     for i in range(n_iterations):
+        if i % 1000 == 0:
+            print('Iteration {}'.format(i))
+
         node_a = random.randint(1, 133)
         node_b = routes[routes.index(node_a) + 1]
         node_c = random.randint(1, 133)
@@ -382,6 +371,6 @@ def two_opt_swap(output_df, data, n_iterations):
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 1000
+n_iterations = 50000
 output_df = two_opt_swap(df, data, n_iterations)
-output_df.to_excel('Ex2.2-2025115.xls', index=False, index_label=False)
+output_df.to_excel('Ex2.2-2025115.xls', index=False)
