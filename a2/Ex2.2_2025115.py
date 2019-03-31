@@ -346,16 +346,17 @@ def create_new_df(A, routes_of_routes, km_of_kms, data):
             if loc_idx == 0:
                 dist = 0
             else:
+                print('{} to {}'.format(previous_loc, loc))
                 dist = A[previous_loc, loc]
 
             route_distance += dist
             total_distance += dist
-            city_name = data.iat[loc_idx, 1]
+            city_name = data.iat[loc, 1]
             previous_loc = loc
 
             new_data.append([route_idx, loc, city_name, route_distance, total_distance])
 
-            print('Total distance" {}'.format(total_distance))
+        print('Total distance" {}'.format(total_distance))
 
     return pd.DataFrame(new_data, columns=['Route Nr.','City Nr.','City Name','Total Distance in Route (km)', 'Total distance (km)'])
 
@@ -427,6 +428,6 @@ def two_opt_swap(two_opt_df, data, n_iterations):
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 10000
+n_iterations = 1
 output_df = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)
