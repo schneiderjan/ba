@@ -71,6 +71,18 @@ def make_list_containing_lists_routes(routes):
 
     return list_of_lists_of_routes
 
+def make_list_containing_lists_kms(kms):
+    temp_km = []
+    list_of_lists_of_kms = []
+    for km in kms:
+        if km == 0:
+            list_of_lists_of_kms.append(temp_km)
+            temp_km = [km]
+        else:
+            temp_km.append(km)
+
+    del list_of_lists_of_kms[0]
+    return list_of_lists_of_kms
 
 def are_edges_in_same_route(routes_of_routes, node_a, node_c):
     for idx, route in enumerate(routes_of_routes):
@@ -135,7 +147,7 @@ def recalculate_route(A, route, data):
             # print('route bad w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time,
             #                                                                          total_visiting_time,
             #                                                                          total_km))
-            return False, total_km, kms
+            return False, -1, []
     # print('route good w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time, total_visiting_time,
     #                                                                          total_km))
     return True, total_km, kms
@@ -153,12 +165,12 @@ def get_old_routes_total_values(A, route_1, route_2, data):
 
 
 def check_swap_two_routes(A, nodeA, nodeC, routes_of_routes, data):
+    swap_treshold = 0.001
+
     route_1 = []
     route_nr_a = -1
     route_2 = []
     route_nr_c = -1
-
-
 
     for route in routes_of_routes:
         if nodeA in route:
@@ -186,38 +198,59 @@ def check_swap_two_routes(A, nodeA, nodeC, routes_of_routes, data):
     # option1
     total_km_opt1 = -1
     is_option_1_valid = False
-    is_route_valid, total_km_ad, kms_ad = recalculate_route(A, new_route_ad, data)
-    if is_route_valid:
-        is_route_valid, total_km_bc, kms_bc = recalculate_route(A, new_route_bc, data)
-        if is_route_valid:
-            is_option_1_valid = True
-            total_km_opt1 = total_km_ad + total_km_bc
+    is_route_valid_ad, total_km_ad, kms_ad = recalculate_route(A, new_route_ad, data)
+    is_route_valid_bc, total_km_bc, kms_bc = recalculate_route(A, new_route_bc, data)
+    if is_route_valid_ad and is_route_valid_bc:
+        is_option_1_valid = True
+        total_km_opt1 = total_km_ad + total_km_bc
 
     # option2
     total_km_opt2 = -1
     is_option_2_valid = False
-    is_route_valid, total_km_ac, kms_ac = recalculate_route(A, new_route_ac, data)
-    if is_route_valid:
-        is_route_valid, total_km_bd, kms_bd = recalculate_route(A, new_route_bd, data)
-        if is_route_valid:
-            is_option_2_valid = True
-            total_km_opt2 = total_km_ac + total_km_bd
+    is_route_valid_ac, total_km_ac, kms_ac = recalculate_route(A, new_route_ac, data)
+    is_route_valid_bd, total_km_bd, kms_bd = recalculate_route(A, new_route_bd, data)
+    if is_route_valid_ac and is_route_valid_bd:
+        is_option_2_valid = True
+        total_km_opt2 = total_km_ac + total_km_bd
 
     # check if an option is better than the original route.
     total_km_old = get_old_routes_total_values(A, route_1, route_2, data)
-    if is_option_1_valid and total_km_opt1 < total_km_old:
+    if is_option_1_valid and total_km_opt1 < total_km_old and (total_km_old - total_km_opt1) >= swap_treshold:
+        # print('Route parts A-D and B-C Option 1')
+        # print('A-D: {}, {}'.format(route_1[:idx_a + 1], route_2[idx_d:]))
+        # print('B-C: {}, {}'.format(route_1[:idx_b - 1:-1], route_2[idx_c::-1]))
+
         if not is_option_2_valid:
-            return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
+            # print('Two route swap: option 1 and 2 not valid, old km: {}, new km: {}'.format(total_km_old, total_km_opt1))
+            # print('Chosen nodes A: {}, B: {}, C: {}, D: {}'.format(nodeA, route_1[idx_b], nodeC, route_2[idx_d]))
+            # print('Old routes 1: {}, 2: {}'.format(route_1, route_2))
+            # print('New routes 1: {}, 2: {}'.format(new_route_ad, new_route_bc))
+            return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc, total_km_old - total_km_opt1
+
         elif is_option_2_valid and total_km_opt1 < total_km_opt2:
-            return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc
-    elif is_option_2_valid and total_km_opt2 < total_km_old:
-        return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd
+            # print('Two route swap: option 1 over option 2, old km: {}, new km opt1: {}, opt2: {}'.format(total_km_old, total_km_opt1, total_km_opt2))
+            # print('Chosen nodes A: {}, B: {}, C: {}, D: {}'.format(nodeA, route_1[idx_b], nodeC, route_2[idx_d]))
+            # print('Old routes 1: {}, 2: {}'.format(route_1, route_2))
+            # print('New routes 1: {}, 2: {}'.format(new_route_ad, new_route_bc))
+            return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c, kms_ad, kms_bc, total_km_old - total_km_opt1
+
+    elif is_option_2_valid and total_km_opt2 < total_km_old and (total_km_old - total_km_opt2) >= swap_treshold:
+        # print('Route parts A-C and B-D Option 2')
+        # print('A-C: {}, {}'.format(route_1[:idx_a + 1], route_2[idx_c::-1]))
+        # print('B-D: {}, {}'.format(route_1[:idx_b - 1:-1], route_2[idx_d:]))
+        #
+        # print('Two route swap: option 2, old km: {}, new km: {}'.format(total_km_old, total_km_opt2))
+        # print('Chosen nodes A: {}, B: {}, C: {}, D: {}'.format(nodeA, route_1[idx_b], nodeC, route_2[idx_d]))
+        # print('Old routes 1: {}, 2: {}'.format(route_1, route_2))
+        # print('New routes 1: {}, 2: {}'.format(new_route_ac, new_route_bd))
+        return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c, kms_ac, kms_bd, total_km_old - total_km_opt2
     else:
         # print('nothing is valid')
-        return False, [], [], -1, -1, [], []
+        return False, [], [], -1, -1, [], [], -1
 
 
 def check_swap_one_route(A, node_a, node_c, routes_of_routes, data):
+    swap_treshold = 0.001
     route_ = []
     route_nr = -1
 
@@ -252,10 +285,15 @@ def check_swap_one_route(A, node_a, node_c, routes_of_routes, data):
     if len(new_route) > 0:
         is_route_valid, total_km, kms = recalculate_route(A, new_route, data)
         total_old_km = get_old_routes_total_values(A, route_, [], data)
-        if is_route_valid and total_km < total_old_km:
-            return True, new_route, route_nr, kms
+        if is_route_valid and total_km < total_old_km and swap_treshold < (total_old_km - total_km):
+            # print('Index difference is {}'.format(index_diff))
+            # print('One route swap: old km: {}, new km: {}'.format(total_old_km, total_km))
+            # print('Chosen nodes A: {}, C: {}'.format(node_a, node_c))
+            # print('Old route {}'.format(route_))
+            # print('New route {}'.format(new_route))
+            return True, new_route, route_nr, kms, total_old_km - total_km
 
-    return False, [], -1, []
+    return False, [], -1, [], -1
 
 
 def create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2):
@@ -265,89 +303,130 @@ def create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_
     if len(new_route_2) > 0:
         for j in range(len(new_route_2)):
             new_data.append([route_nr_2, new_route_2[j], 'city_tbd', kms_2[j], -1])
+
     return new_data
 
 
-def update_output_df(output_df, data):
-    output_df.to_excel('before_udpate.xls', index=False)
-    output_df.sort_values(by=['Route Nr.', 'Total Distance in Route (km)'], axis=0, inplace=True)
-    output_df = output_df.reset_index()
-    output_df.to_excel('after_sort.xls', index=False)
+def update_output_df(updated_df, data):
+    updated_df.to_excel('before_udpate.xls', index=False)
+    updated_df = updated_df.sort_values(by=['Route Nr.', 'Total Distance in Route (km)'])
+    updated_df = updated_df.reset_index(drop=True)
+    updated_df.to_excel('after_sort.xls', index=False)
+    print('Old distance: {}'.format(updated_df.iat[-1, 4]))
+
     total_dist = 0
-    for idx, row in output_df.iterrows():
-        dist = output_df.at[idx, 'Total Distance in Route (km)']
+    for idx, row in updated_df.iterrows():
+        dist = updated_df.at[idx, 'Total Distance in Route (km)']
         if dist == 0:
-            output_df.at[idx, 'Total distance (km)'] = total_dist
+            # total_dist += dist
+            updated_df.at[idx, 'Total distance (km)'] = total_dist
         else:
-            total_dist += dist - output_df.at[idx - 1, 'Total Distance in Route (km)']
-            output_df.at[idx, 'Total distance (km)'] = total_dist
+            total_dist += dist - updated_df.at[idx - 1, 'Total Distance in Route (km)']
+            updated_df.at[idx, 'Total distance (km)'] = total_dist
 
-        if row['City Name'] == 'city_tbd':
-            idx_name = data.loc[data['Nr'] == row['City Nr.']].index[0]
-            output_df.at[idx, 'City Name'] = data.at[idx_name, 'Name']
+        # if row['City Name'] == 'city_tbd':
+        #     idx_name = data.loc[data['Nr'] == row['City Nr.']].index[0]
+        #     updated_df.at[idx, 'City Name'] = data.at[idx_name, 'Name']
 
-    return output_df
+    print('Total distance in Dataframe: {}'.format(updated_df.iat[-1, 4]))
+    return updated_df
 
 
-def two_opt_swap(output_df, data, n_iterations):
+def create_new_df(A, routes_of_routes, km_of_kms, data):
+    total_distance = 0
+    new_data = []
+    print(routes_of_routes)
+    for route_idx in range(len(routes_of_routes)):
+        route_distance = 0
+        previous_loc = 0
+
+        for loc_idx in range(len(routes_of_routes[route_idx])):
+            route = routes_of_routes[route_idx]
+            loc = route[loc_idx]
+            if loc_idx == 0:
+                dist = 0
+            else:
+                dist = A[previous_loc, loc]
+
+            route_distance += dist
+            total_distance += dist
+            city_name = data.iat[loc_idx, 1]
+            previous_loc = loc
+
+            new_data.append([route_idx, loc, city_name, route_distance, total_distance])
+
+            print('Total distance" {}'.format(total_distance))
+
+    return pd.DataFrame(new_data, columns=['Route Nr.','City Nr.','City Name','Total Distance in Route (km)', 'Total distance (km)'])
+
+
+
+def two_opt_swap(two_opt_df, data, n_iterations):
     A = make_distance_matrix(data)
     # tabu_matrix = make_tabu_matrix(data)
     routes = df['City Nr.'].tolist()
     routes_of_routes = make_list_containing_lists_routes(routes)
+    kms_ = df['Total Distance in Route (km)'].tolist()
+    km_of_kms = make_list_containing_lists_kms(kms_)
 
     for i in range(n_iterations):
         if i % 1000 == 0:
             print('Iteration {}'.format(i))
 
         node_a = random.randint(1, 133)
-        # node_b = routes[routes.index(node_a) + 1]
         node_c = random.randint(1, 133)
-        # node_d = routes[routes.index(node_c) + 1]
 
         # makes sure that there is no invalid index to get an index out of range exception
         # or edges to swap are the same
-        # if node_b > 133 or node_d > 133 or node_a == node_c:
-        #     continue
         if node_a == node_c:
             continue
 
         # Basically if the km are lower for routes in total the swap can be made
         # but also the whole time needs to be still in the 8 visit and 10 john work time
         if are_edges_in_same_route(routes_of_routes, node_a, node_c):
-            is_swap_good, new_route, route_nr, kms = check_swap_one_route(A, node_a, node_c, routes_of_routes, data)
+
+            is_swap_good, new_route, route_nr, kms, total_diff = check_swap_one_route(A, node_a, node_c, routes_of_routes, data)
             if is_swap_good:
-                output_df.set_index('Route Nr.', inplace=True)
-                output_df.drop(route_nr, inplace=True)
-                output_df = output_df.reset_index()
-
-                data_to_append = create_data_to_append(new_route, route_nr, kms, [], -1, [])
-                new_routes_df = pd.DataFrame(data_to_append, columns=output_df.columns)
-                output_df = output_df.append(new_routes_df)
-
+                # two_opt_df.set_index('Route Nr.', inplace=True)
+                # two_opt_df.drop(route_nr, inplace=True)
+                # two_opt_df = two_opt_df.reset_index()
+                #
+                # data_to_append = create_data_to_append(new_route, route_nr, kms, [], -1, [])
+                # new_routes_df = pd.DataFrame(data_to_append, columns=two_opt_df.columns)
+                # two_opt_df = two_opt_df.append(new_routes_df)
+                #
+                # two_opt_df = update_output_df(two_opt_df, data)
+                print('---------------------------------------------------')
                 routes_of_routes[route_nr] = new_route
+                km_of_kms[route_nr] = kms
         else:
-            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2 = \
+            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2, kms_1, kms_2, total_km = \
                 check_swap_two_routes(A, node_a, node_c, routes_of_routes, data)
             if is_swap_good:
-                output_df.set_index('Route Nr.', inplace=True)
-                output_df.drop(route_nr_1, inplace=True)
-                output_df.drop(route_nr_2, inplace=True)
-                output_df = output_df.reset_index()
+                # two_opt_df.set_index('Route Nr.', inplace=True)
+                # two_opt_df.drop(route_nr_1, inplace=True)
+                # two_opt_df.drop(route_nr_2, inplace=True)
+                # two_opt_df = two_opt_df.reset_index()
+                #
+                # data_to_append = create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2)
+                # new_routes_df = pd.DataFrame(data_to_append, columns=two_opt_df.columns)
+                # two_opt_df = two_opt_df.append(new_routes_df)
 
-                data_to_append = create_data_to_append(new_route_1, route_nr_1, kms_1, new_route_2, route_nr_2, kms_2)
-                new_routes_df = pd.DataFrame(data_to_append, columns=output_df.columns)
-                output_df = output_df.append(new_routes_df)
-
+                # two_opt_df = update_output_df(two_opt_df, data)
+                print('---------------------------------------------------')
                 routes_of_routes[route_nr_1] = new_route_1
                 routes_of_routes[route_nr_2] = new_route_2
+                # km_of_kms[route_nr_1] = kms_1
+                # km_of_kms[route_nr_2] = kms_2
 
-    output_df = update_output_df(output_df, data)
-    return output_df
+    result_df = create_new_df(A, routes_of_routes, km_of_kms, data)
+    # two_opt_df = update_output_df(two_opt_df, data)
+    return result_df
 
 
 df = pd.read_excel('Ex2.1-2025115.xls')
 data = pd.read_excel('Data Excercise 2 - EMTE stores - BA 2019.xlsx')
 
-n_iterations = 50000
+n_iterations = 10000
 output_df = two_opt_swap(df, data, n_iterations)
 output_df.to_excel('Ex2.2-2025115.xls', index=False)
