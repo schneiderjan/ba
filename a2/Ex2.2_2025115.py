@@ -55,6 +55,11 @@ def calculate_travel_time(distance):
 
 
 def make_list_containing_lists_routes(routes):
+    """
+    Creates a list that contains all routes as a list
+    :param routes:
+    :return:
+    """
     hq_counter = 0
     temp_route = []
     list_of_lists_of_routes = []
@@ -71,18 +76,6 @@ def make_list_containing_lists_routes(routes):
 
     return list_of_lists_of_routes
 
-def make_list_containing_lists_kms(kms):
-    temp_km = []
-    list_of_lists_of_kms = []
-    for km in kms:
-        if km == 0:
-            list_of_lists_of_kms.append(temp_km)
-            temp_km = [km]
-        else:
-            temp_km.append(km)
-
-    del list_of_lists_of_kms[0]
-    return list_of_lists_of_kms
 
 def are_edges_in_same_route(routes_of_routes, node_a, node_c):
     for idx, route in enumerate(routes_of_routes):
@@ -92,6 +85,13 @@ def are_edges_in_same_route(routes_of_routes, node_a, node_c):
 
 
 def recalculate_route(A, route, data):
+    """
+    Recalculates a given route to verify constraints
+    :param A: distance matrix
+    :param route: the given route
+    :param data: data from assignment
+    :return:
+    """
     total_travel_time = 0
     total_visiting_time = 0
     total_km = 0
@@ -144,12 +144,7 @@ def recalculate_route(A, route, data):
             current_loc = next_loc
 
         if total_visiting_time > 8 or total_travel_time > 10:
-            # print('route bad w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time,
-            #                                                                          total_visiting_time,
-            #                                                                          total_km))
             return False, -1, []
-    # print('route good w/ travel time: {}, visit time {}, total km: {}'.format(total_travel_time, total_visiting_time,
-    #                                                                          total_km))
     return True, total_km, kms
 
 
@@ -165,6 +160,16 @@ def get_old_routes_total_values(A, route_1, route_2, data):
 
 
 def check_swap_two_routes(A, nodeA, nodeC, routes_of_routes, data):
+    """
+    If two nodes from different routes are selected then we build both options of swapping
+    and then check which one is better and perform exchange if possible
+    :param A:
+    :param nodeA:
+    :param nodeC:
+    :param routes_of_routes:
+    :param data:
+    :return:
+    """
     route_1 = []
     route_nr_a = -1
     route_2 = []
@@ -222,14 +227,22 @@ def check_swap_two_routes(A, nodeA, nodeC, routes_of_routes, data):
             return True, new_route_ad, new_route_bc, route_nr_a, route_nr_c
 
     elif is_option_2_valid and total_km_opt2 < total_km_old:
-       return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c
+        return True, new_route_ac, new_route_bd, route_nr_a, route_nr_c
 
     else:
         return False, [], [], -1, -1
 
 
-
 def check_swap_one_route(A, node_a, node_c, routes_of_routes, data):
+    """
+    If two nodes are selected in the same route this method verifies whether a swap can be made
+    :param A: distance matrix
+    :param node_a: city 1
+    :param node_c: city 2
+    :param routes_of_routes: list of all routes
+    :param data: data from assignment
+    :return:
+    """
     route_ = []
     route_nr = -1
 
@@ -257,19 +270,14 @@ def check_swap_one_route(A, node_a, node_c, routes_of_routes, data):
         new_route[idx_c] = node_a
     elif index_diff == 2:
         if idx_a > idx_c:
-            new_route = route_[:idx_c] + route_[idx_a:idx_c-1:-1] + route_[idx_a+1:]
+            new_route = route_[:idx_c] + route_[idx_a:idx_c - 1:-1] + route_[idx_a + 1:]
         else:
-            new_route = route_[:idx_a] + route_[idx_c:idx_a-1:-1] + route_[idx_c+1:]
+            new_route = route_[:idx_a] + route_[idx_c:idx_a - 1:-1] + route_[idx_c + 1:]
 
     if len(new_route) > 0:
         is_route_valid, total_km, kms = recalculate_route(A, new_route, data)
         total_old_km = get_old_routes_total_values(A, route_, [], data)
         if is_route_valid and total_km < total_old_km:
-            # print('Index difference is {}'.format(index_diff))
-            # print('One route swap: old km: {}, new km: {}'.format(total_old_km, total_km))
-            # print('Chosen nodes A: {}, C: {}'.format(node_a, node_c))
-            # print('Old route {}'.format(route_))
-            # print('New route {}'.format(new_route))
             return True, new_route, route_nr
 
     return False, [], -1
@@ -309,10 +317,10 @@ def create_new_df(A, routes_of_routes, data):
 
             new_data.append([route_idx, loc, city_name, route_distance, total_distance])
 
-        print('Total distance" {}'.format(total_distance))
+        print('Total distance: {}'.format(total_distance))
 
-    return pd.DataFrame(new_data, columns=['Route Nr.','City Nr.','City Name','Total Distance in Route (km)', 'Total distance (km)'])
-
+    return pd.DataFrame(new_data, columns=['Route Nr.', 'City Nr.', 'City Name', 'Total Distance in Route (km)',
+                                           'Total distance (km)'])
 
 
 def two_opt_swap(data, n_iterations):
@@ -340,7 +348,9 @@ def two_opt_swap(data, n_iterations):
             if is_swap_good:
                 routes_of_routes[route_nr] = new_route
         else:
-            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2 = check_swap_two_routes(A, node_a, node_c, routes_of_routes, data)
+            is_swap_good, new_route_1, new_route_2, route_nr_1, route_nr_2 = check_swap_two_routes(A, node_a, node_c,
+                                                                                                   routes_of_routes,
+                                                                                                   data)
             if is_swap_good:
                 routes_of_routes[route_nr_1] = new_route_1
                 routes_of_routes[route_nr_2] = new_route_2
