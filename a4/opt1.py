@@ -50,27 +50,27 @@ for i in range(N):
 # for i in range(N):
 
 
-
-# print(mu_A)
+print(mu_A)
 # print(mu_B)
 #
 c = LpVariable.dicts("c_j", range(N), 0, c)
-mu = LpVariable.dicts("mu", range(N), 0, mu_A)
+mu = LpVariable.dicts("mu", [(i, j) for i in range(nr_teams) for j in range(N)], 0, cat='integer')
+team = LpVariable.dicts('team', range(nr_teams), 0, nr_teams, cat='integer')
 x = LpVariable.dicts('x', [(i, j, t) for i in range(N) for j in range(N) for t in range(T)], 0, cat='integer')
 s = LpVariable.dicts('s', [(i, j, t) for i in range(N) for j in range(N) for t in range(T)], 0, cat='integer')
 t = LpVariable.dicts('t', range(T), lowBound=0, upBound=T, cat='integer')
 f = LpVariable.dicts('f_j', range(N), 0, 1, cat='integer')
-d= LpVariable.dicts('d_j', range(N), lowBound=0, upBound=T, cat='integer')
+d = LpVariable.dicts('d_j', range(N), lowBound=0, upBound=T, cat='integer')
 e = LpVariable.dicts('e_j', range(N), 0, cat='integer')
 # model
 model = LpProblem("opt1_B", LpMinimize)
 
-print(x)
-#objective function
+# print(x)
+# objective function
 # objective_function =
 model += lpSum(e[j] for j in range(N))
 
-#constraints
+# constraints
 for j in range(N):
     for i in range(nr_teams):
         model += lpSum(x[(i, j, t)] for t in range(T)) <= 1
@@ -79,15 +79,15 @@ for t in range(T):
     for j in range(N):
         model += lpSum(s[(i, j, t)]) <= 1
 
+print(mu)
 for t in range(T):
     for j in range(N):
-        model += lpSum(t * s[(i,j,t)] + mu[(i,j)] for i in range(nr_teams)) <= T # missing:  + mu
+        model += lpSum(t * s[(i, j, t)] + mu[(i, j)] for i in range(nr_teams)) <= T  # missing:  + mu
 
-
-# for j in range(N):
-#     model += lpSum(f[j]) <= 1
+for j in range(N):
+    model += lpSum(f[j]) <= 1
 
 status = model.solve()
 print(LpStatus[model.status])
-
+print(value(model.objective))
 # status= model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
