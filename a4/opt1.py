@@ -4,7 +4,7 @@ import numpy as np
 
 data = pd.read_excel('RUL_consultancy_predictions.xlsx')
 
-print('Preparing values...')
+print('Preparing values')
 # nr of engines
 N = 100
 nr_teams_a = 2
@@ -52,10 +52,10 @@ for i in range(N):
 mu = {'a': mu_A, 'b': mu_B}
 
 c = LpVariable.dicts("c", range(N), 0, cat='integer')
-x = LpVariable.dicts('x', [(i, j, t) for i in range(N) for j in range(N) for t in range(T)], 0, cat='integer')
-s = LpVariable.dicts('s', [(i, j, t) for i in range(N) for j in range(N) for t in range(T)], 0, cat='integer')
-t = LpVariable.dicts('t', range(T), lowBound=0, upBound=T, cat='integer')
-f = LpVariable.dicts('f_j', range(N), 0, 1, cat='integer')
+x = LpVariable.dicts('x', indexs=[(i, j, t) for i in range(N) for j in range(N) for t in range(T)], lowBound=0, cat='binary')
+# s = LpVariable.dicts('s', [(i, j, t) for i in range(N) for j in range(N) for t in range(T)], 0, cat='integer')
+# t = LpVariable.dicts('t', range(T), lowBound=0, upBound=T, cat='integer')
+# f = LpVariable.dicts('f_j', range(N), 0, 1, cat='integer')
 
 print('Creating model')
 
@@ -77,27 +77,27 @@ for i in range(nr_teams):
     team = teams[i]
     for j in range(N):
         for t in range(T):
-            model += lpSum(x[(i, g, h)] for h in range(t, min(T, t + mu[teams[i]][j])) for g in range(N)) \
-                     <= N * T * x[(i, j, t)]
+            model += lpSum(x[(i, g, h)] for h in range(t, min(T, t + mu[teams[i]][j] - 1)) for g in range(N))  \
+                     <= T - t - rul[j]
+                     # <= N * T * (x[(i, j, t)])
 
 # a team must finish their work within T
 for i in range(nr_teams):
     for j in range(N):
-        model += lpSum([mu[teams[i]][j] * x[(i, j, t)] for t in range(T)]) <= T
+        model += lpSum([(t + mu[teams[i]][j]) * x[(i, j, t)] for t in range(T)]) <= T
 
 # cost constraint
 for j in range(N):
     available_days = T - rul[j]
-    for i in range(nr_teams):
-        model += cost[j] * (available_days - lpSum(((x[(i, j, t)]) * (T - t - mu[teams[i]][j])) for t in range(T))) == \
-                 c[j]
+    model += cost[j] * (available_days - lpSum(((x[(i, j, t)]) * (T - t - mu[teams[i]][j])) for t in range(T)
+                                               for i in range(nr_teams))) == c[j]
 
 # cost is either 0 or higher
 for j in range(N):
     model += c[j] >= 0
 
 print('Solving model')
-status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=600))
+status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
 # status = model.solve()
 print(LpStatus[model.status])
 
@@ -105,13 +105,13 @@ print("Total cost: {}".format(pulp.value(model.objective)))
 TOL = 0.00001
 nr_of_dcs = 0
 for j in model.variables():
-    if j.varValue > TOL:
+    if j.varValue > 0:
         print(j.name + " = " + str(j.varValue))
 
 # constraints needed:
 # [x] engine to team
-# [x] one engine at at time
+# [] one engine at at time
 # [x] finish work in T
-# [] assign costs
-# [] fail only once
+# [x] assign costs
+# [] fail only once \\ might be not needed anymore.
 # []
