@@ -51,9 +51,9 @@ for i in range(M):
 
 mu = {'a': mu_A, 'b': mu_B}
 
-c = LpVariable.dicts("c", range(M), 0)
-x = LpVariable.dicts('x', indexs=[(i, j, t) for i in range(I) for j in range(M) for t in range(T)], lowBound=0, upBound=1,
-                     cat='binary')
+c = LpVariable.dicts('c', [j for j in range(M)], lowBound=0, cat=LpInteger)
+x = LpVariable.dicts('x', indexs=[(i, j, t) for i in range(I) for j in range(M) for t in range(T)],
+                     lowBound=0, upBound=1, cat=LpBinary)
 # s = LpVariable.dicts('s', [(i, j, t) for i in range(M) for j in range(M) for t in range(T)], 0, cat='integer')
 # t = LpVariable.dicts('t', range(T), lowBound=0, upBound=T, cat='integer')
 # f = LpVariable.dicts('f_j', range(M), 0, 1, cat='integer')
@@ -82,28 +82,33 @@ for i in range(I):
 for i in range(I):
     for j in range(M):
         available_days = T - rul[j]
-        model += cost[j] * (available_days - lpSum(((x[(i, j, t)]) * (T - t - mu[teams[i]][j])) for t in range(T))) == c[j]
+        model += cost[j] * (available_days - lpSum((x[(i, j, t)]) * (T - t - mu[teams[i]][j]) for t in range(T))) == c[j]
 
+# cost is either 0 or higher
+for j in range(M):
+    model += c[j] >= 0
+
+# team blocker - the one that should work but does not.
+for i in range(I):
+    for t in range(T):
+        model += lpSum(x[(i, w, e)] for w in range(M) for e in range(t, min(T, t + mu[teams[i]][w] - 1))) <= 1
 # should be working - solution infeasible
 # with more time get negative result and not solved.
 # team blocker
-for i in range(I):
-    for j in range(M):
-        for t in range(T):
-            model += lpSum(x[(i, w, e)] for w in range(M) for e in range(t, min(T, t + mu[teams[i]][w] - 1)))  \
-                      <= T * (1 - x[(i, j, t)])
+# for i in range(I):
+#     for j in range(M):
+#         for t in range(T):
+#             model += lpSum(x[(i, w, e)] for w in range(M) for e in range(t, min(T, t + mu[teams[i]][j] - 1)))  \
+#                       <= T* (1 - x[(i, j, t)])
 
 # # team blocker - instant infeasible
 # for i in range(I):
 #     for t in range(T):
 #         model += lpSum(x[(i, w, e)] for w in range(M) for e in range(max(1, t + mu[teams[i]][w] + 1), T)) <= 1
 
-# cost is either 0 or higher
-for j in range(M):
-    model += c[j] >= 0
 
 print('Solving model')
-status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=120))
+status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
 # status = model.solve()
 print(LpStatus[model.status])
 
