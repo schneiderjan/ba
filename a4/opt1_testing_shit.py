@@ -55,14 +55,12 @@ for i in range(nr_engines):
 
 # make things to loop over starting at 1
 data = data[data['rul'] <= time_horizon]
-print(data.head())
 M = data['id'].tolist()
-print(M)
 T = range(1, time_horizon + 1)
 I = range(1, len(teams) + 1)
 
-c = LpVariable.dicts('c', [j for j in M], lowBound=0, cat=LpInteger)
-x = LpVariable.dicts('x', [(i, j, t) for i in I for j in M for t in T], lowBound=0, upBound=1, cat=LpBinary)
+c = LpVariable.dicts('c', M, lowBound=0, cat=LpInteger)
+x = LpVariable.dicts('x', [(i, j, t) for i in I for j in M for t in T], lowBound=0, cat=LpBinary)
 
 print('Creating model')
 
@@ -78,36 +76,52 @@ print('Adding constraints')
 for j in M:
     model += lpSum(x[(i, j, t)] for i in I for t in T) <= 1
 
+# team blocking
+for i in I:
+    for j in M:
+        for t in T:
+            mu = data.loc[data['id'] == j, teams[i]].item()
+            model += lpSum(x[(i, _j, _t)] - 1 for _j in M for _t in range(t, min(time_horizon + 1, t + mu - 1))) <= \
+                     time_horizon * (1 - x[(i, j, t)])
+
 # a team must finish their work within T
 for i in I:
     for j in M:
         for t in T:
             mu = data.loc[data['id'] == j, teams[i]].item()
 
-            model += (t + mu) * x[(i, j, t)] <= time_horizon
+            model += lpSum((t + mu) * x[(i, j, t)]) <= time_horizon + 1
 
 # cost constraint
-for i in I:
-    for j in M:
-        available_days = time_horizon - data.loc[data['id'] == j, 'rul'].item()
-        mu = data.loc[data['id'] == j, teams[i]].item()
-        cost = data.loc[data['id'] == j, 'cost'].item()
+# test = []
+# for i in I:
+for j in M:
+    available_days = time_horizon - data.loc[data['id'] == j, 'rul'].item()
+    # print(available_days)
+    # mu = data.loc[data['id'] == j, teams[i]].item()
+    cost = data.loc[data['id'] == j, 'cost'].item()
+    model += cost * (available_days - lpSum(x[(i, j, t)] * (time_horizon - t - data.loc[data['id'] == j, teams[i]].item() + 1) for i in I for t in T)) == c[j]
 
-        model += cost * (available_days - lpSum((x[(i, j, t)]) * (time_horizon - t - mu) for t in T)) == c[j]
+# print(test)
+
+
+
+# # team blocker - the one that should work but does not.
+# for i in I:
+#     for t in T:
+#         model += lpSum(
+#             x[(i, _j, _t)] for _j in M
+#                        for _t in range(t, min(time_horizon, t + data.loc[data['id'] == _j, teams[i]].item()))
+#                        )-1 <= 1
 
 # cost is either 0 or higher
 for j in M:
     model += c[j] >= 0
 
-# team blocker - the one that should work but does not.
-for i in I:
-    for t in T:
-        model += lpSum(x[(i, w, e)] for w in M for e in range(t, min(time_horizon, t + data.loc[data['id'] == w, teams[i]].item() - 1))) <= 1
-
 
 print('Solving model')
-status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=320))
-# status = model.solve()
+# status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=320))
+status = model.solve()
 print(LpStatus[model.status])
 
 print("Total cost: {}".format(pulp.value(model.objective)))
