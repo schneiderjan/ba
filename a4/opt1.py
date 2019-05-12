@@ -76,7 +76,7 @@ for j in range(M):
 for i in range(I):
     for j in range(M):
         for t in range(T):
-            model += lpSum((t + mu[teams[i]][j]) * x[(i, j, t)]) <= T
+            model += (t + mu[teams[i]][j]) * x[(i, j, t)] <= T - 1
 
 # cost constraint
 for i in range(I):
@@ -92,6 +92,14 @@ for j in range(M):
 for i in range(I):
     for t in range(T):
         model += lpSum(x[(i, w, e)] for w in range(M) for e in range(t, min(T, t + mu[teams[i]][w] - 1))) <= 1
+
+# for i in range(I):
+#     for j in range(M):
+#         for t in range(T):
+#             model += lpSum(x[(i, w, e)] for w in range(M) for e in range(t, min(T, t + mu[teams[i]][w] - 1))) <= 1 / x[(i, j, t )]
+
+
+
 # should be working - solution infeasible
 # with more time get negative result and not solved.
 # team blocker
@@ -145,3 +153,4 @@ for j in model.variables():
 #     for j in range(M):
 #         for t in range(T):
 #             model += lpSum(x[(i, k, d)] for d in range(min(T, t + mu[teams[i]][j])) for k in range(M)) <=
+
