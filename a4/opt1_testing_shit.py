@@ -81,8 +81,8 @@ for i in I:
     for j in M:
         for t in T:
             mu = data.loc[data['id'] == j, teams[i]].item()
-            model += lpSum(x[(i, _j, _t)] for _j in M for _t in range(t, min(time_horizon + 1, t + mu - 1)))-1 <= \
-                     time_horizon * (1- x[(i, j, t)])
+            model += lpSum(x[(i, _j, _t)] for _j in M for _t in range(t, min(time_horizon + 1, t + mu))) - 1 <= \
+                     time_horizon * (1 - x[(i, j, t)])
 
 # # team blocker - the one that should work but does not.
 # for i in I:
@@ -106,11 +106,10 @@ for j in M:
     cost = data.loc[data['id'] == j, 'cost'].item()
 
     model += cost * (available_days - lpSum(x[(i, j, t)] *
-                                            (time_horizon - t - data.loc[data['id'] == j, teams[i]].item() + 1) for i in I for t in T)) == c[j]
-
+                                            (time_horizon - t - data.loc[data['id'] == j, teams[i]].item() + 1) for i in
+                                            I for t in T)) == c[j]
 
 # print(test)
-
 
 
 # # team blocker - the one that should work but does not.
@@ -126,7 +125,7 @@ for j in M:
     model += c[j] >= 0
 
 print('Solving model')
-status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
+status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=320))
 # status = model.solve()
 print(LpStatus[model.status])
 
