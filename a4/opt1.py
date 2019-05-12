@@ -9,7 +9,10 @@ pd.set_option('display.width', desired_width)
 def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_constraint=False, waiting_constraint=False):
     if use_consultancy_predictions:
         data = pd.read_excel('RUL_consultancy_predictions.xlsx')
-    # else: TODO: Use our own prediction data
+    else:
+        data = pd.read_csv('DataSchedulePredicted.csv')
+        data = data.astype(int)
+    data.rename(columns={'RUL': 'rul'}, inplace=True)
 
     if waiting_constraint:
         data['w_a'] = 1
@@ -19,7 +22,6 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
         data['w_b'] = 0
 
     print('Prepare values / Pre-compute')
-    data.rename(columns={'RUL': 'rul'}, inplace=True)
     nr_engines = 100
     teams = {1: 'mu_a', 2: 'mu_a', 3: 'mu_b', 4: 'mu_b'}
     waiting_times = {1: 'w_a', 2: 'w_a', 3: 'w_b', 4: 'w_b'}
@@ -120,6 +122,4 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
             print(j.name + " = " + str(j.varValue))
 
 
-run_opt_model()
-
-run_opt_model(waiting_constraint=True)
+run_opt_model(use_consultancy_predictions=False)
