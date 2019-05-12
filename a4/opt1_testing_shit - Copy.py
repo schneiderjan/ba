@@ -1,31 +1,21 @@
 from pulp import *
 import pandas as pd
 
+# increase console output
 desired_width = 520
 pd.set_option('display.width', desired_width)
 
 data = pd.read_excel('RUL_consultancy_predictions.xlsx')
 data.rename(columns={'RUL': 'rul'}, inplace=True)
-print('Preparing values')
-# nr of engines
+
+print('Prepare values / Pre-compute')
 nr_engines = 100
-I_a = 2
-I_b = 2
-# I = 4
 time_horizon = 25
-# T = t_p
 teams = {1: 'mu_a', 2: 'mu_a', 3: 'mu_b', 4: 'mu_b'}
-# mu = {'a': 'mu_a', 'b': 'mu_b'}
-# variables
-cost = dict()
-mu_A = dict()
-mu_B = dict()
-rul = dict()
 
 data['cost'] = -1
 data['mu_a'] = -1
 data['mu_b'] = -1
-
 for i in range(nr_engines):
     # cost
     if 0 <= i <= 19 or 60 <= i <= 79:
@@ -53,24 +43,23 @@ for i in range(nr_engines):
     elif 33 <= i <= 66:
         data.at[i, 'mu_b'] = data.at[i, 'mu_a'] + 2
 
-# make things to loop over starting at 1
+# create variables which are used to loop over
 data = data[data['rul'] <= time_horizon]
 M = data['id'].tolist()
 T = range(1, time_horizon + 1)
 I = range(1, len(teams) + 1)
 
+# create pulp variables
 c = LpVariable.dicts('c', M, lowBound=0, cat=LpInteger)
 x = LpVariable.dicts('x', [(i, j, t) for i in I for j in M for t in T], lowBound=0, cat=LpBinary)
 
 print('Creating model')
-
-# model
+# objective function
 model = LpProblem("opt1_B", LpMinimize)
 objective_function = lpSum(c[j] for j in M)
 model += objective_function
 
 print('Adding constraints')
-
 # constraints
 # team to engine
 for j in M:
@@ -81,13 +70,9 @@ for i in I:
     for j in M:
         for t in T:
             mu = data.loc[data['id'] == j, teams[i]].item()
+
             model += lpSum(x[(i, _j, _t)] for _j in M for _t in range(t, min(time_horizon + 1, t + mu))) - 1 <= \
                      time_horizon * (1 - x[(i, j, t)])
-
-# # team blocker - the one that should work but does not.
-# for i in I:
-#     for t in T:
-#         model += lpSum(x[(i, _j, _t)] for _j in M for _t in range(t, min(time_horizon, t + data.loc[data['id'] == _j, teams[i]].item())))-1 <= 1
 
 # a team must finish their work within T
 for i in I:
@@ -98,39 +83,25 @@ for i in I:
             model += lpSum((t + mu) * x[(i, j, t)]) <= time_horizon + 1
 
 # cost constraint
-# test = []
-# for i in I:
 for j in M:
     available_days = time_horizon - data.loc[data['id'] == j, 'rul'].item()
-    # mu = data.loc[data['id'] == j, teams[i]].item()
     cost = data.loc[data['id'] == j, 'cost'].item()
 
     model += cost * (available_days - lpSum(x[(i, j, t)] *
-                                            (time_horizon - t - data.loc[data['id'] == j, teams[i]].item() + 1) for i in
-                                            I for t in T)) == c[j]
+                                            (time_horizon - t - data.loc[data['id'] == j, teams[i]].item() + 1)
+                                            for i in I for t in T)) == c[j]
 
-# print(test)
-
-
-# # team blocker - the one that should work but does not.
-# for i in I:
-#     for t in T:
-#         model += lpSum(
-#             x[(i, _j, _t)] for _j in M
-#                        for _t in range(t, min(time_horizon, t + data.loc[data['id'] == _j, teams[i]].item()))
-#                        )-1 <= 1
-
-# cost is either 0 or higher
+# cost is either 0 or higher - non-negativity constraint
 for j in M:
     model += c[j] >= 0
 
 print('Solving model')
-status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=320))
-# status = model.solve()
+status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
 print(LpStatus[model.status])
 
 print("Total cost: {}".format(pulp.value(model.objective)))
 TOL = 0.00001
+print("Cost per engine and team to engine to time assignment:")
 for j in model.variables():
-    if j.varValue > 0:
+    if j.varValue > TOL:
         print(j.name + " = " + str(j.varValue))
