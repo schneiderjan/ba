@@ -7,6 +7,16 @@ pd.set_option('display.width', desired_width)
 
 
 def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_constraint=False, waiting_constraint=False):
+    """
+    Runs the optimization for all given optimization tasks. By setting parameters it is possible to choose from
+    optimization tasks.
+    :param time_horizon: t_p the given planning time horizon. Defaults to 25 if no value is given.
+    :param use_consultancy_predictions: If true the consultancy predictions are used, otherwise, predictions from
+     predictions are used.
+    :param max_engine_constraint: If true a max engine constraint is introduced for teams, otherwise, not.
+    :param waiting_constraint: If true a waiting time is added to a team's maintenance time, otherwise, not.
+    :return: nothing.
+    """
     if use_consultancy_predictions:
         data = pd.read_excel('RUL_consultancy_predictions.xlsx')
     else:
@@ -25,6 +35,7 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
     nr_engines = 100
     teams = {1: 'mu_a', 2: 'mu_a', 3: 'mu_b', 4: 'mu_b'}
     waiting_times = {1: 'w_a', 2: 'w_a', 3: 'w_b', 4: 'w_b'}
+    max_engines = {1: 2, 2: 2, 3: 2, 4: 2}
 
     data['cost'] = -1
     data['mu_a'] = -1
@@ -93,9 +104,8 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
         for j in M:
             for t in T:
                 mu = data.loc[data['id'] == j, teams[i]].item()
-                w = data.loc[data['id'] == j, waiting_times[i]].item()
 
-                model += lpSum((t + mu + w) * x[(i, j, t)]) <= time_horizon + 1
+                model += lpSum((t + mu) * x[(i, j, t)]) <= time_horizon + 1
 
     # cost constraint
     for j in M:
@@ -110,8 +120,15 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
     for j in M:
         model += c[j] >= 0
 
+    # adds max engine constraint if max_engine_constraint == True
+    if max_engine_constraint:
+        for i in I:
+            k = max_engines[i]
+
+            model += lpSum(x[(i, j, t)] for j in M for t in T) <= k
+
     print('Solving model')
-    status = model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
+    model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
     print(LpStatus[model.status])
 
     print("Total cost: {}".format(pulp.value(model.objective)))
@@ -122,4 +139,4 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
             print(j.name + " = " + str(j.varValue))
 
 
-run_opt_model(use_consultancy_predictions=False)
+run_opt_model(use_consultancy_predictions=True)
