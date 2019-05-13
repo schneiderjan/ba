@@ -139,4 +139,33 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
             print(j.name + " = " + str(j.varValue))
 
 
-run_opt_model(use_consultancy_predictions=True)
+print('Optimization Task 1_B')
+run_opt_model(use_consultancy_predictions=False)
+print('#####################################')
+
+print('Optimization Task 1_C')
+run_opt_model()
+print('#####################################')
+
+print('Optimization Task 1_D')
+print('Own predictions: ')
+run_opt_model(time_horizon=40, use_consultancy_predictions=False)
+print('Consultancy predictions: ')
+run_opt_model(time_horizon=40)
+print('#####################################')
+
+print('Optimization Task 2_B')
+run_opt_model(use_consultancy_predictions=False, max_engine_constraint=True)
+print('#####################################')
+
+print('Optimization Task 2_C')
+run_opt_model(max_engine_constraint=True)
+print('#####################################')
+
+print('Optimization Task 3_B')
+run_opt_model(use_consultancy_predictions=False, max_engine_constraint=True, waiting_constraint=True)
+print('#####################################')
+
+print('Optimization Task 3_C')
+run_opt_model(max_engine_constraint=True, waiting_constraint=True)
+print('#####################################')
