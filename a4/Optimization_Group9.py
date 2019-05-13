@@ -182,9 +182,11 @@ run_opt_model(max_engine_constraint=True)
 print('#####################################')
 
 print('# Optimization Task 3_B             #')
+print('#####################################')
 run_opt_model(use_consultancy_predictions=False, max_engine_constraint=True, waiting_constraint=True)
 print('#####################################')
 
 print('# Optimization Task 3_C             #')
+print('#####################################')
 run_opt_model(max_engine_constraint=True, waiting_constraint=True)
 print('#####################################')
