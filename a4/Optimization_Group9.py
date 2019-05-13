@@ -128,7 +128,7 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
             model += lpSum(x[(i, j, t)] for j in M for t in T) <= k
 
     print('Solving model')
-    model.solve(pulp.PULP_CBC_CMD(maxSeconds=60))
+    model.solve(pulp.PULP_CBC_CMD(maxSeconds=210))
     print(LpStatus[model.status])
 
     print("Total cost: {}".format(pulp.value(model.objective)))
