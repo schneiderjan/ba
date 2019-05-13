@@ -132,11 +132,24 @@ def run_opt_model(time_horizon=25, use_consultancy_predictions=True, max_engine_
     print(LpStatus[model.status])
 
     print("Total cost: {}".format(pulp.value(model.objective)))
-    TOL = 0.00001
     print("Cost per engine and team to engine to time assignment:")
+    TOL = 0.00001
     for j in model.variables():
         if j.varValue > TOL:
-            print(j.name + " = " + str(j.varValue))
+            if j.name[0] == 'c':
+                print(f"Cost engine {j.name} = {str(j.varValue)}")
+            if j.name[0] == 'x':
+                x_split = j.name.split(',')
+                team = x_split[0].split('(')[1]
+                engine = x_split[1].replace('_','')
+                start_day = x_split[2].replace('_','')[:-1]
+
+                mu = data.loc[data['id'] == int(engine), teams[int(team)]].item()
+                w = data.loc[data['id'] == int(engine), waiting_times[int(team)]].item()
+                end_day = int(start_day) + mu + w - 1
+
+                print(
+                    f'Team {team} maintains engine {engine}. The team begins on day {start_day} and ends on day {str(end_day)}')
 
 
 print('#####################################')
